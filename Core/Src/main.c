@@ -5,6 +5,7 @@
   * @brief          : Main program body
   ******************************************************************************
   * @attention
+  *
   * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
@@ -18,21 +19,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "adc.h"
-#include "tim.h"
-#include "usart.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
-#include"stdio.h"
-#include"string.h"
-#include"math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -41,399 +36,453 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define WIFI_NAME "zjxnb"
-#define WIFI_PWD "12345678"
-#define SERVER_ADDRESS "10.17.29.111"
-#define SERVER_PORT "8081"
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim3;
+
+UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
-char rxBuffer[20];// 中间缓存区要设置大一?
+uint8_t uart1_rx_buffer[2048];// for uart1 receive buffer
+uint8_t uart2_rx_buffer[2048];// for uart2 receive buffer
 
-uint8_t aRxBuffer[2000];//接收缓冲
-uint8_t bRxBuffer[2000];//发送缓冲
-uint16_t USART2_RX_STA= 0;
-uint16_t pt_w1=1,pt_w2=0,pt_r1=1,pt_r2=0;
+unsigned char a[25] = {0};
+unsigned char b[25] = {0};
+unsigned char c[25] = {0};
+unsigned char d[25] = {0};
+unsigned char e[25] = {0};
+unsigned char f[25] = {0};
+unsigned char g[25] = {0};
+unsigned char h[25] = {0};
+unsigned char i[25] = {0};
 
-
-char lcdInput[9][12];
-int lcdInputLen[9];
-//定义部分代码
-char ap_mode[] = "AT+CWMODE=2\r\n";
-char reset[] = "AT+RST\r\n";
-char ap_args[] = "AT+CWSAP=\"ZMFL\",\"12345678\",1,4\r\n";
-char ap_multi_connection[] = "AT+CIPMUX=1\r\n";
-char ap_cip_server[] = "AT+CIPSERVER=1,8081\r\n";
-char ap_mode[] = "AT+CIPSEND=0,25\r\n";
-
-char Test[]="AT\r\n";
-char JoinWifi[]="AT+CWJAP=\"gjq\",\"12345678\"\r\n";
-char TestJoin[]="AT+CWJAP?\r\n";
-char SimpleConnect[]="AT+CIPMUX=0\r\n";
-char JoinServer[]="AT+CIPSTART=\"TCP\",\"192.168.43.13\",3456\r\n";
-char Mode[]="AT+CIPMODE=1\r\n";
-char ModeSend[]="AT+CIPSEND=\r\n";
+unsigned int aa = 0;
+unsigned int LENGTH = 7;
+unsigned int ba = 0;
+unsigned int ca = 0;
+unsigned int da = 0;
+unsigned int ea = 0;
+unsigned int fa = 0;
+unsigned int ga = 0;
+unsigned int ha = 0;
+unsigned int ia = 0;
 
 
-
+unsigned int al = 0;
+unsigned int bl = 0;
+unsigned int cl = 0;
+unsigned int dl = 0;
+unsigned int el = 0;
+unsigned int fl = 0;
+unsigned int gl = 0;
+unsigned int hl = 0;
+unsigned int il = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
+static void MX_TIM3_Init(void);
+static void MX_USART1_UART_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-uint8_t send_AT_command(uint8_t* at_command, uint8_t* ack, uint16_t timeout);
-uint8_t check_command(uint8_t* desired_result);
-uint8_t check_connection(void);
-void get_WAN_IP(uint8_t * ip_buffer);
-uint8_t send_data(uint8_t* data, uint8_t* ack, uint16_t wait_time);
-uint8_t atk_8266_quit_trans(void);
-uint8_t atk_8266_get_ip(uint8_t x,uint8_t y);
-
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-
-int tmpOpen = 0;
-char temperature[1024] = "temperature\0";
-//char yes[1024] = "yes";
-char uRx_Data[1024];
+char uRx_Data[2048];
 int uLength = 0;
 
-void addOneLine(char *data, int len){
-	for(int i=8;i>=1;--i){
-		for(int j=0;j<lcdInputLen[i-1];++j)	lcdInput[i][j] = lcdInput[i-1][j];
-		lcdInput[i][lcdInputLen[i-1]] = '\0';
-		lcdInputLen[i] = lcdInputLen[i-1];
+
+//Call this method to clear all the information.
+void reset(){
+	for(int i = 0;i < 2048;i++){
+		uRx_Data[i] = 0;
 	}
-	for(int i=0;i<len;++i)	lcdInput[0][i] = data[i];
-	lcdInput[0][len] = '\0';
-	lcdInputLen[0] = len;
+	uLength = 0;
+	for(int x = 0;x < 25;x++){
+		a[x] = 0;
+		b[x] = 0;
+		c[x] = 0;
+		d[x] = 0;
+		e[x] = 0;
+		f[x] = 0;
+		g[x] = 0;
+		h[x] = 0;
+		i[x] = 0;
+	}
+
+	aa = 0;
+	LENGTH = 7;
+	ba = 0;
+	ca = 0;
+	da = 0;
+	ea = 0;
+	fa = 0;
+	ga = 0;
+	ha = 0;
+	ia = 0;
+
+	al = 0;
+	bl = 0;
+	cl = 0;
+	dl = 0;
+	el = 0;
+	fl = 0;
+	gl = 0;
+	hl = 0;
+	il = 0;
+	changeState(0);
+	showMessage();
 }
 
-
-// to accept serial port data from computer (huart1) and wifi data (huart2)
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart == &huart1) {
-        HAL_UART_Receive_IT(&huart1, &my_re_buf1[++pt_w1], 1);
-    }
-
-    if (huart == &huart2) {
-        HAL_UART_Receive_IT(&huart2, &my_re_buf2[++pt_w2], 1);
-    }
-}
-/*
-//	if(huart->Instance==USART1){
-//		static unsigned char uRx_Data[1024] = {0};
-//		static unsigned char uLength = 0;
-//		static unsigned char a[25] = {0};
-//		static unsigned char b[25] = {0};
-//		static unsigned char c[25] = {0};
-//		static unsigned char d[25] = {0};
-//		static unsigned char e[25] = {0};
-//		static unsigned char f[25] = {0};
-//		static unsigned char g[25] = {0};
-//		static unsigned char h[25] = {0};
-//		static unsigned char i[25] = {0};
-//
-//		static unsigned int aa = 0;
-//		static unsigned int ba = 0;
-//		static unsigned int ca = 0;
-//		static unsigned int da = 0;
-//		static unsigned int ea = 0;
-//		static unsigned int fa = 0;
-//		static unsigned int ga = 0;
-//		static unsigned int ha = 0;
-//		static unsigned int ia = 0;
-//
-//		if(rxBuffer[0] == '\n'){
-//			HAL_UART_Transmit(&huart1, uRx_Data, uLength, 0xffff);
-//			HAL_UART_Transmit(&huart2,uRx_Data, uLength,0xffff);
-//
-//			int p = uLength / 24;
-//
-//			for(int m = 0; m <= p; m++){
-//				for(int k = 0; k < 25; k++){
-//					a[k] = b[k];
-//					b[k] = c[k];
-//					c[k] = d[k];
-//					d[k] = e[k];
-//					e[k] = f[k];
-//					f[k] = g[k];
-//					g[k] = h[k];
-//					h[k] = i[k];
-//					i[k] = uRx_Data[k + m * 24];
-//				}
-//				aa = ba;
-//				ba = ca;
-//				ca = da;
-//				da = ea;
-//				ea = fa;
-//				fa = ga;
-//				ga = ha;
-//				ha = ia;
-//				ia = 0;
-//			}
-//
-//			int l = uLength % 24;
-//			for(int k = 0; k < 24-l; k++){
-//				i[k] = '\40';
-//			}
-//			for(int k = 0; k < l; k++){
-//				i[24-l+k] = uRx_Data[k+24*p];
-//			}
-//			i[24] = 0;
-//
-//			if(uLength == 12 && uRx_Data[0] == 't' && uRx_Data[1] == 'e' && uRx_Data[2] == 'm' && uRx_Data[3] == 'p' && uRx_Data[4] == 'e'
-//					&& uRx_Data[5] == 'r' && uRx_Data[6] == 'a' && uRx_Data[7] == 't' && uRx_Data[8] == 'u' && uRx_Data[9] == 'r' && uRx_Data[10] == 'e' && uRx_Data[11] == '\r'){
-//				HAL_UART_Transmit(&huart1, uRx_Data, uLength, 0xffff);
-//
-//				HAL_ADC_Start(&hadc1);
-//				// Wait for regular group conversion to be completed
-//				HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-//				// Get ADC value
-//				uint16_t raw = HAL_ADC_GetValue(&hadc1); // the voltage should be raw * (3.3/4096)(12bits)
-//				float voltage = (1.43 - (raw * (3.3/4096))) / 4.3 + 25;
-//				// Convert to string and print
-//				char msg[20];
-////				sprintf(msg, "%.6f\r\n", voltage);
-//				HAL_UART_Transmit(&huart1, msg, 9, 0xffff);
-//
-//				for(int k = 0; k < 25; k++){
-//					a[k] = b[k];
-//					b[k] = c[k];
-//					c[k] = d[k];
-//					d[k] = e[k];
-//					e[k] = f[k];
-//					f[k] = g[k];
-//					g[k] = h[k];
-//					h[k] = i[k];
-//				}
-//				aa = ba;
-//				ba = ca;
-//				ca = da;
-//				da = ea;
-//				ea = fa;
-//				fa = ga;
-//				ga = ha;
-//				ha = ia;
-//				for(int k = 0; k < 9; k++){
-//					i[k] = msg[k];
-//				}
-//				ia = 1;
-//				i[9] = 0;
-//			}
-//
-//			LCD_Clear(WHITE);
-//			BACK_COLOR = BLUE;
-//			LCD_DrawRectangle(20, 20, 220, 300);
-//			LCD_Fill(21, 21, 219, 299, BLUE);
-//			if (aa == 1){
-//				POINT_COLOR = RED;
-//			}
-//			else{
-//				POINT_COLOR = BLACK;
-//			}
-//			LCD_ShowString(23, 35, 185, 10, 16, (uint8_t*) a);
-//			if (ba == 1){
-//				POINT_COLOR = RED;
-//			}
-//			else{
-//				POINT_COLOR = BLACK;
-//			}
-//			LCD_ShowString(23, 65, 185, 10, 16, (uint8_t*) b);
-//			if (ca == 1){
-//							POINT_COLOR = RED;
-//						}
-//						else{
-//							POINT_COLOR = BLACK;
-//						}
-//			LCD_ShowString(23, 95, 185, 10, 16, (uint8_t*) c);
-//			if (da == 1){
-//							POINT_COLOR = RED;
-//						}
-//						else{
-//							POINT_COLOR = BLACK;
-//						}
-//			LCD_ShowString(23, 125, 185, 10, 16, (uint8_t*) d);
-//			if (ea == 1){
-//							POINT_COLOR = RED;
-//						}
-//						else{
-//							POINT_COLOR = BLACK;
-//						}
-//			LCD_ShowString(23, 155, 185, 10, 16, (uint8_t*) e);
-//			if (fa == 1){
-//							POINT_COLOR = RED;
-//						}
-//						else{
-//							POINT_COLOR = BLACK;
-//						}
-//			LCD_ShowString(23, 185, 185, 10, 16, (uint8_t*) f);
-//			if (ga == 1){
-//							POINT_COLOR = RED;
-//						}
-//						else{
-//							POINT_COLOR = BLACK;
-//						}
-//			LCD_ShowString(23, 215, 185, 10, 16, (uint8_t*) g);
-//			if (ha == 1){
-//							POINT_COLOR = RED;
-//						}
-//						else{
-//							if (ia == 1){
-//								POINT_COLOR = YELLOW;
-//							}
-//							else{
-//								POINT_COLOR = BLACK;
-//							}
-//						}
-//			LCD_ShowString(23, 245, 185, 10, 16, (uint8_t*) h);
-//			if (ia == 1){
-//							POINT_COLOR = RED;
-//						}
-//						else{
-//							POINT_COLOR = YELLOW;
-//						}
-//			LCD_ShowString(23, 275, 185, 10, 16, (uint8_t*) i);
-//			POINT_COLOR = BLACK;
-//
-//			uLength = 0;
-//		}
-//		else{
-//			uRx_Data[uLength] = rxBuffer[0];
-////			HAL_UART_Transmit(&huart1, rxBuffer[0], 1, 0xffff);
-//			uLength++;
-//		}
-//	}*/
-
-/**
- * <p> �? ESP8266发�?�命�?
- * @param at_command 发�?�的命令字符�?
- * @param ack 期待的应答结果，如果为空，则不需要等待应�?
- * @param timeout 等待时间（单�?: 10ms�?
- * @return 0-> 发�?�成�?; 1->发�?�失�?
- */
-uint8_t send_AT_command(uint8_t* at_command, uint8_t* ack, uint16_t timeout){
-    uint8_t response = 0;
-    USART2_RX_STA = 0;
-
-    if (ack && timeout) {
-        while (--timeout) {
-            HAL_Delay(10);
-//            delay_ms(10);
-            if (USART2_RX_STA & 0x8000) {
-                if (check_command(ack)) {
-                    break;
-                }
-                USART2_RX_STA = 0;
-            }
-        }
-        if (timeout == 0) {
-            response = 1;
-        }
-    }
-    return response;
-}
-/**
- * to check the answer from the wifi
- */
-
-uint8_t check_command(uint8_t* desired_result){
-    char* re_ptr = 0;
-    if (USART2_RX_STA & 0x8000) {
-        aRxBuffer[USART2_RX_STA & 0x7fff] = 0;
-        re_ptr = strstr((const char* )aRxBuffer,(const char*) desired_result);
-    }
-    return (uint8_t *) re_ptr;
-}
-//to check the wifi connection
-uint8_t check_connection(void)
-{
-   uint8_t *p;
-   uint8_t response;
-   if (atk_8266_quit_trans()) {return 0;}
-   send_AT_command("AT+CIPSTATUS",":",50);
-   p = check_command("+CIPSTATUS:");
-   response = *p;
-   return response;
-}
-/**
- * 获取模块STA模式或者AP模式下的IP地址以及MAC地址
- * @param ip_buffer 地址输出缓存区
- */
-void get_WAN_IP(uint8_t * ip_buffer){
-    uint8_t *p,*p1;
-    if (send_AT_command("AT+CIFSR","OK",50)){
-        ip_buffer[0] = 0;
-        return;
-    }
-    p = check_command("\"");
-    p1 = (uint8_t *) strstr((const char *)(p+1),"\"");
-    *p1 = 0;
-    sprintf((char*)ip_buffer,"%s",p+1);
+// This is called when the connection status changes
+void StateChange(int connected){
+	changeState(connected);
+	showMessage();
 }
 
-uint8_t atk_8266_get_ip(uint8_t x,uint8_t y){
-    uint8_t *p;
-    uint8_t *p1;
-    uint8_t *p2;
-    uint8_t *ip_buffer;
-    uint8_t *buf;
-    return 0;
+// This method is called when sending a message.
+// usart : 1 -> The machine sends a message.
+// usart : 2 -> The machine received the message.
+void printOut(unsigned char newline[],unsigned char ul, int usart,int connected){
+	changeState(connected);
+	updateuD(newline,ul,usart);
+	showMessage();
 }
 
+void rightDialog(
+	  	int x0, int y0,int r,int L,uint16_t c){
+	POINT_COLOR = c;
+  	int a, b;
+  	int di;
+	a = 0;
+	b = r;
+	di = 3 - (r << 1);
+	while (a <= b) {
+		LCD_DrawPoint(x0 - a, y0 + b);             //1
+		LCD_DrawPoint(x0 - b, y0 + a);
+		LCD_DrawPoint(x0 - a, y0 - b);             //2
+		LCD_DrawPoint(x0 - b, y0 - a);             //7
+		a++;
+		if (di < 0)
+			di += 4 * a + 6;
+		else {
+			di += 10 + 4 * (a - b);
+			b--;
+		}
+	}
 
+	int x_1 = x0;
+	int y_1 = y0 - r;
+	int x_2 = x0 + L;
+	int y_2 = y0 + r;
+	LCD_DrawLine(x_1, y_1, x_2 + r, y_1);
+	LCD_DrawLine(x_2 + r, y_1,x_2 + sqrt(2)/2 * r, y0 - sqrt(2)/2 * r);
+	LCD_DrawLine(x_1, y_2, x_2, y_2);
+	x0 = x_2;
+		a = 0;
+		b = r;
+		di = 3 - (r << 1);
+		while (a <= b) {
+			LCD_DrawPoint(x0 + b, y0 - a);             //0
+			LCD_DrawPoint(x0 + b, y0 + a);             //4
+			LCD_DrawPoint(x0 + a, y0 + b);             //6
+			a++;
+			if (di < 0)
+				di += 4 * a + 6;
+			else {
+				di += 10 + 4 * (a - b);
+				b--;
+			}
+		}
 
+}
+void leftDialog(
+	  	int x0, int y0,int r,int L,uint16_t c){
+	POINT_COLOR = c;
+  	int a, b;
+  	int di;
+	a = 0;
+	b = r;
+	di = 3 - (r << 1);
+	while (a <= b) {
+		LCD_DrawPoint(x0 - a, y0 + b);             //1
+		LCD_DrawPoint(x0 - b, y0 + a);
+		LCD_DrawPoint(x0 - b, y0 - a);             //7
+		a++;
+		if (di < 0)
+			di += 4 * a + 6;
+		else {
+			di += 10 + 4 * (a - b);
+			b--;
+		}
+	}
 
+	int x_1 = x0;
+	int y_1 = y0 - r;
+	int x_2 = x0 + L;
+	int y_2 = y0 + r;
+	LCD_DrawLine(x_1 - r, y_1, x_2, y_1);
+	LCD_DrawLine(x_1 - r, y_1,x_1 - sqrt(2)/2 * r, y0 - sqrt(2)/2 * r);
+	LCD_DrawLine(x_1, y_2, x_2, y_2);
+	x0 = x_2;
+		a = 0;
+		b = r;
+		di = 3 - (r << 1);
+		while (a <= b) {
+					LCD_DrawPoint(x0 + a, y0 - b);             //5
+					LCD_DrawPoint(x0 + b, y0 - a);             //0
+					LCD_DrawPoint(x0 + b, y0 + a);             //4
+					LCD_DrawPoint(x0 + a, y0 + b);             //6
+			a++;
+			if (di < 0)
+				di += 4 * a + 6;
+			else {
+				di += 10 + 4 * (a - b);
+				b--;
+			}
+		}
 
-
-/**
- *
- * @param data
- * @param ack
- * @param wait_time
- * @return
- */
-uint8_t send_data(uint8_t* data, uint8_t* ack, uint16_t wait_time){
-    uint8_t response;
-    USART2_RX_STA=0;
-    u2_printf("%s",data);	//发送命令
-    if(ack&&waittime)		//需要等待应答
-    {
-        while(--waittime)	//等待倒计时
-        {
-            delay_ms(10);
-            if(USART2_RX_STA&0X8000)//接收到期待的应答结果
-            {
-                if(atk_8266_check_cmd(ack))break;//得到有效数据
-                USART2_RX_STA=0;
-            }
-        }
-        if(waittime==0)res=1;
-    }
-    return res;
 }
 
-uint8_t atk_8266_quit_trans(void)
-{
-    while((USART2->SR&0X40)==0);	//等待发�?�空
-    USART2->DR='+';
-    HAL_Delay(15);
-//    delay_ms(15);					//大于串口组帧时间(10ms)
-    while((USART2->SR&0X40)==0);	//等待发�?�空
-    USART2->DR='+';
-    HAL_Delay(15);
-//    delay_ms(15);					//大于串口组帧时间(10ms)
-    while((USART2->SR&0X40)==0);	//等待发�?�空
-    USART2->DR='+';
-    HAL_Delay(500);
-//    delay_ms(500);					//等待500ms
-    return atk_8266_send_cmd("AT","OK",20);//�?出�?�传判断.
+void changeState(int connected){
+	LCD_Clear(WHITE);
+	LCD_DrawRectangle(16, 20, 220, 300);
+	if(connected == 2){
+			POINT_COLOR = GREEN;
+			LCD_Draw_Circle(30,10,4);
+			LCD_Draw_Circle(30,10,3);
+			LCD_Draw_Circle(30,10,2);
+			LCD_Draw_Circle(30,10,1);
+			LCD_ShowString(40, 4, 185, 10, 16, (uint8_t*) "CONNECTION");
+			POINT_COLOR = BLACK;
+	}
+	else{
+		POINT_COLOR = RED;
+		LCD_Draw_Circle(30,10,4);
+		LCD_Draw_Circle(30,10,3);
+		LCD_Draw_Circle(30,10,2);
+		LCD_Draw_Circle(30,10,1);
+		LCD_ShowString(40, 4, 185, 10, 16, (uint8_t*) "CLOSED");
+		POINT_COLOR = BLACK;
+	}
+}
+
+//usart = 1 : From PCS
+//usart = 2 : From WIFI
+void updateuD(unsigned char newline[],unsigned char ul, int usart){
+	int iii = 0;
+	while(iii<ul){
+		uRx_Data[iii] = newline[iii];
+		iii++;
+	}
+	uLength = ul;
+	addNewLine(usart);
+}
+//usart = 1 : From PC
+//usart = 2 : From WIFI
+void addNewLine(int usart){
+	int p = uLength / 24;
+	for(int m = 0; m <= p; m++){
+		for(int k = 0; k < 25; k++){
+			a[k] = b[k];
+			b[k] = c[k];
+			c[k] = d[k];
+			d[k] = e[k];
+			e[k] = f[k];
+			f[k] = g[k];
+			g[k] = h[k];
+			h[k] = i[k];
+			i[k] = uRx_Data[k + m * 24];
+		}
+		aa = ba;
+		ba = ca;
+		ca = da;
+		da = ea;
+		ea = fa;
+		fa = ga;
+		ga = ha;
+		ha = ia;
+		ia = 0;
+
+
+		al = bl;
+		bl = cl;
+		cl = dl;
+		dl = el;
+		el = fl;
+		fl = gl;
+		gl = hl;
+		hl = il;
+		il = uLength;
+
+	}
+
+	if(usart == 1){
+		int l = uLength % 24;
+		for(int k = 0; k < 24-l; k++){
+			i[k] = '\40';
+		}
+		for(int k = 0; k < l; k++){
+			i[24-l+k] = uRx_Data[k+24*p];
+		}
+		i[24] = 0;
+	}
+	else if(usart == 2){
+		ia = 1;
+	}
+
+}
+void showMessage(){
+	if (aa == 1){
+		POINT_COLOR = RED;
+		if(al!=0){
+			LCD_ShowString(23, 35, 185, 10, 16, (uint8_t*) a);
+			leftDialog(30,43,10,al * LENGTH,RED);
+		}
+	}
+	else{
+		POINT_COLOR = BLACK;
+		if(al!=0){
+			LCD_ShowString(23, 35, 185, 10, 16, (uint8_t*) a);
+			rightDialog(205-(al * LENGTH),43,10,al * LENGTH,BLACK);
+		}
+	}
+
+	if (ba == 1){
+		POINT_COLOR = RED;
+
+		if (bl!=0){
+			LCD_ShowString(23, 65, 185, 10, 16, (uint8_t*) b);
+			leftDialog(30,73,10,bl * LENGTH,RED);
+		}
+
+	}
+	else{
+		POINT_COLOR = BLACK;
+
+		if (bl!=0){
+			LCD_ShowString(23, 65, 185, 10, 16, (uint8_t*) b);
+			rightDialog(205-(bl * LENGTH),73,10,bl * LENGTH,BLACK);
+		}
+	}
+	if (ca == 1){
+		POINT_COLOR = RED;
+
+		if(cl!=0){
+			LCD_ShowString(23, 95, 185, 10, 16, (uint8_t*) c);
+			leftDialog(30,103,10,cl * LENGTH,RED);
+		}
+	}
+	else{
+		POINT_COLOR = BLACK;
+		if(cl!=0){
+			LCD_ShowString(23, 95, 185, 10, 16, (uint8_t*) c);
+			rightDialog(205-(cl * LENGTH),103,10,cl * LENGTH,BLACK);
+		}
+	}
+
+	if (da == 1){
+		POINT_COLOR = RED;
+		if(dl!=0){
+			LCD_ShowString(23, 125, 185, 10, 16, (uint8_t*) d);
+			leftDialog(30,133,10,dl * LENGTH,RED);
+		}
+	}
+	else{
+		POINT_COLOR = BLACK;
+		if(dl!=0){
+			LCD_ShowString(23, 125, 185, 10, 16, (uint8_t*) d);
+			rightDialog(205-(dl * LENGTH),133,10,dl * LENGTH,BLACK);
+		}
+	}
+	if (ea == 1){
+		POINT_COLOR = RED;
+		if(el!=0){
+			LCD_ShowString(23, 155, 185, 10, 16, (uint8_t*) e);
+			leftDialog(30,163,10,el * LENGTH,RED);
+		}
+	}
+	else{
+		POINT_COLOR = BLACK;
+
+		if(el!=0){
+			LCD_ShowString(23, 155, 185, 10, 16, (uint8_t*) e);
+			rightDialog(205-(el * LENGTH),163,10,el * LENGTH,BLACK);
+		}
+	}
+	if (fa == 1){
+		POINT_COLOR = RED;
+		if(fl!=0){
+			LCD_ShowString(23, 185, 185, 10, 16, (uint8_t*) f);
+			leftDialog(30,193,10,fl * LENGTH,RED);
+		}
+	}
+	else{
+		POINT_COLOR = BLACK;
+		if(fl!=0){
+			LCD_ShowString(23, 185, 185, 10, 16, (uint8_t*) f);
+			rightDialog(205-(fl * LENGTH),193,10,fl * LENGTH,BLACK);
+		}
+
+	}
+	if (ga == 1){
+		POINT_COLOR = RED;
+		if(gl!=0){
+			LCD_ShowString(23, 215, 185, 10, 16, (uint8_t*) g);
+			leftDialog(30,223,10,gl * LENGTH,RED);
+		}
+	}
+	else{
+		POINT_COLOR = BLACK;
+
+		if(gl!=0){
+			LCD_ShowString(23, 215, 185, 10, 16, (uint8_t*) g);
+			rightDialog(205-(gl * LENGTH),223,10,gl * LENGTH,BLACK);
+		}
+
+	}
+	if (ha == 1){
+		POINT_COLOR = RED;
+		if(hl!=0){
+			LCD_ShowString(23, 245, 185, 10, 16, (uint8_t*) h);
+			leftDialog(30,253,10,hl * LENGTH,RED);
+		}
+	}
+	else{
+		POINT_COLOR = BLACK;
+		if(hl!=0){
+			LCD_ShowString(23, 245, 185, 10, 16, (uint8_t*) h);
+			rightDialog(205-(hl * LENGTH),253,10,hl * LENGTH,BLACK);
+		}
+
+	}
+	if (ia == 1){
+		POINT_COLOR = RED;
+		if(il!=0){
+			LCD_ShowString(23, 275, 185, 10, 16, (uint8_t*) i);
+			leftDialog(30,283,10,il * LENGTH,RED);
+		}
+	}
+	else{
+		POINT_COLOR = BLACK;
+
+		if(il!=0){
+			LCD_ShowString(23, 275, 185, 10, 16, (uint8_t*) i);
+			rightDialog(205-(il * LENGTH),283,10,il * LENGTH,BLACK);
+		}
+
+	}
+	POINT_COLOR = BLACK;
 }
 
 /* USER CODE END 0 */
@@ -445,6 +494,7 @@ uint8_t atk_8266_quit_trans(void)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -460,60 +510,31 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+    LCD_Init();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
-  MX_ADC1_Init();
-  MX_USART2_UART_Init();
+  MX_DMA_Init();
   MX_TIM3_Init();
+  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Receive_IT(&huart1, (uint8_t *)rxBuffer, 1);
-//  HAL_UART_Receive_IT(&huart2,(uint8_t *)rxBuffer,1);
+    __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
+    HAL_UART_Receive_DMA(&huart1, (uint8_t *) uart1_rx_buffer, 2048);
+    __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+    HAL_UART_Receive_DMA(&huart2, (uint8_t *) uart2_rx_buffer, 2048);
+    HAL_TIM_Base_Start_IT(&htim3);
 
-  LCD_Init();
-  for(int i=0;i<=8;++i)	lcdInput[i][0] = '\0', lcdInputLen[i] = 0;
-
-	LCD_Clear(WHITE);
-	BACK_COLOR = BLUE;
-	LCD_DrawRectangle(20, 20, 220, 300);
-	LCD_Fill(21, 21, 219, 299, BLUE);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-  }
-
+    while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    /*
-//	  LCD_Clear(WHITE);
-//	  BACK_COLOR = GREEN;
-//	  LCD_DrawRectangle(20, 20, 220, 290);	//x1,y1,x2,y2
-//	  LCD_Fill(21, 21, 219, 289, GREEN);	//+1,+1,-1,-1
-//
-//	  POINT_COLOR = BLACK;
-//	  for(int i=0;i<=8;++i)	LCD_ShowString(210-lcdInputLen[i]*12-2, 280-24*(i+1), 200, 24, 24, (uint8_t*) lcdInput[i]);
-//
-//	  HAL_ADC_Start(&hadc1);
-//	  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-//	  raw = HAL_ADC_GetValue(&hadc1);
-//	  ans = raw * (3.3/4096);
-//	  ans = (1.43 - ans)/4.3 + 25;
-//	  sprintf(msg, "%.2f", ans);
-//
-//	  POINT_COLOR = RED;
-//	  if(tmpOpen == 1)	LCD_ShowString(32, 32, 200, 24, 24, (uint8_t*) msg);	//x,y,w,h,size,mes
-//
-//	  HAL_Delay(2000);
-//
-//
-//  }*/
+    }
   /* USER CODE END 3 */
 }
 
@@ -525,7 +546,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -554,12 +574,191 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 7199;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 1999;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
+  /* DMA1_Channel6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : KEY0_Pin */
+  GPIO_InitStruct.Pin = KEY0_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(KEY0_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LED0_Pin */
+  GPIO_InitStruct.Pin = LED0_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED0_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : KEY1_Pin */
+  GPIO_InitStruct.Pin = KEY1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(KEY1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LED1_Pin */
+  GPIO_InitStruct.Pin = LED1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED1_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
@@ -573,7 +772,7 @@ void SystemClock_Config(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+    /* User can add his own implementation to report the HAL error return state */
 
   /* USER CODE END Error_Handler_Debug */
 }

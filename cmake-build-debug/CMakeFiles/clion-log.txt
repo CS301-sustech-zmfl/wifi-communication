@@ -1,4 +1,4 @@
-C:\Users\Lori\AppData\Local\JetBrains\CLion2020.2\cygwin_cmake\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /cygdrive/c/Users/Lori/STM32CubeIDE/workspace_1.3.0/WIFI-Project
+C:\Users\Lori\AppData\Local\JetBrains\CLion2020.2\cygwin_cmake\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /cygdrive/c/Users/Lori/STM32CubeIDE/workspace_1.3.0/final-project
 -- The C compiler identification is unknown
 -- The CXX compiler identification is unknown
 -- The ASM compiler identification is unknown
@@ -41,5 +41,5 @@ CMake Error at CMakeLists.txt:17 (project):
 
 -- Warning: Did not find file Compiler/-ASM
 -- Configuring incomplete, errors occurred!
-See also "/cygdrive/c/Users/Lori/STM32CubeIDE/workspace_1.3.0/WIFI-Project/cmake-build-debug/CMakeFiles/CMakeOutput.log".
-See also "/cygdrive/c/Users/Lori/STM32CubeIDE/workspace_1.3.0/WIFI-Project/cmake-build-debug/CMakeFiles/CMakeError.log".
+See also "/cygdrive/c/Users/Lori/STM32CubeIDE/workspace_1.3.0/final-project/cmake-build-debug/CMakeFiles/CMakeOutput.log".
+See also "/cygdrive/c/Users/Lori/STM32CubeIDE/workspace_1.3.0/final-project/cmake-build-debug/CMakeFiles/CMakeError.log".

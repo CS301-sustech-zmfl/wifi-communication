@@ -1,8 +1,10 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+# CodeStream ignored files
+/../../final-project\.idea/codestream.xml
 # Datasource local storage ignored files
-/../../../../../../../:\Users\Lori\STM32CubeIDE\workspace_1.3.0\WIFI-Project\.idea/dataSources/
+/../../../../../../../:\Users\Lori\STM32CubeIDE\workspace_1.3.0\final-project\.idea/dataSources/
 /dataSources.local.xml
 # Editor-based HTTP Client requests
 /httpRequests/

@@ -30,24 +30,27 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-WIFI-Project.elf \
+final-project.elf \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-WIFI-Project.list \
+final-project.list \
+
+OBJCOPY_HEX += \
+final-project.hex \
 
 OBJCOPY_BIN += \
-WIFI-Project.bin \
+final-project.bin \
 
 
 # All Target
-all: WIFI-Project.elf secondary-outputs
+all: final-project.elf secondary-outputs
 
 # Tool invocations
-WIFI-Project.elf: $(OBJS) $(USER_OBJS) C:\Users\Lori\STM32CubeIDE\workspace_1.3.0\WIFI-Project\STM32F103RCTX_FLASH.ld
-	arm-none-eabi-gcc -o "WIFI-Project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\Lori\STM32CubeIDE\workspace_1.3.0\WIFI-Project\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="WIFI-Project.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+final-project.elf: $(OBJS) $(USER_OBJS) C:\Users\Lori\STM32CubeIDE\workspace_1.3.0\final-project\STM32F103RCTX_FLASH.ld
+	arm-none-eabi-gcc -o "final-project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\Lori\STM32CubeIDE\workspace_1.3.0\final-project\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="final-project.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -56,13 +59,18 @@ default.size.stdout: $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-WIFI-Project.list: $(EXECUTABLES)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "WIFI-Project.list"
+final-project.list: $(EXECUTABLES)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "final-project.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-WIFI-Project.bin: $(EXECUTABLES)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "WIFI-Project.bin"
+final-project.hex: $(EXECUTABLES)
+	arm-none-eabi-objcopy  -O ihex $(EXECUTABLES) "final-project.hex"
+	@echo 'Finished building: $@'
+	@echo ' '
+
+final-project.bin: $(EXECUTABLES)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "final-project.bin"
 	@echo 'Finished building: $@'
 	@echo ' '
 
@@ -71,7 +79,7 @@ clean:
 	-$(RM) *
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_HEX) $(OBJCOPY_BIN)
 
 .PHONY: all clean dependents
 .SECONDARY:
